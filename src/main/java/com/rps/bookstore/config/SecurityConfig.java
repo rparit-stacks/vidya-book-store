@@ -1,9 +1,14 @@
 package com.rps.bookstore.config;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.rps.bookstore.security.CustomUserDetailsService;
 import com.rps.bookstore.security.JwtAuthenticationFilter;
 import com.rps.bookstore.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,6 +25,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import java.util.Arrays;
 import java.util.List;
@@ -65,6 +74,12 @@ public class SecurityConfig {
     
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
+
+    @Value("${cloud.aws.credentials.access-key}")
+    private String awsKey;
+    @Value("${cloud.aws.credentials.secret-key}")
+    private String awsSecret;
     
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
@@ -132,7 +147,17 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    
+
+
+
+    @Bean
+    public S3Client s3Client(){
+       AwsBasicCredentials basicCredentials = AwsBasicCredentials.create(awsKey,awsSecret);
+
+        return S3Client.builder().credentialsProvider(StaticCredentialsProvider.create(basicCredentials))
+                .region(Region.AP_SOUTHEAST_2)
+                .build();
+    }
     /**
      * Configures CORS settings.
      * 
